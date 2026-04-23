@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>YOMI — Flash Cards Japonaises</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;700&family=Shippori+Mincho:wght@400;600;800&family=DM+Sans:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --ink: #1a1310; --paper: #f5f0e8; --cream: #ede7d9;
+      --red: #c0392b; --red-deep: #96241b; --gold: #c9a84c;
+      --muted: #7a6e62; --border: rgba(26,19,16,0.12);
+    }
+    html { scroll-behavior: smooth; }
+    body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans-serif; font-weight: 300; overflow-x: hidden; }
+
+    /* NAV */
+    nav { display:flex; align-items:center; justify-content:space-between; padding:1.2rem 4rem; background:var(--ink); position:sticky; top:0; z-index:100; border-bottom:2px solid var(--gold); }
+    .logo { display:flex; align-items:baseline; gap:0.5rem; text-decoration:none; cursor:pointer; }
+    .logo-jp { font-family:'Noto Serif JP',serif; font-size:1.4rem; color:var(--gold); }
+    .logo-en { font-family:'Shippori Mincho',serif; font-size:1.6rem; font-weight:800; color:var(--paper); letter-spacing:0.25em; }
+    .nav-links { display:flex; gap:2.5rem; list-style:none; }
+    .nav-links a { color:var(--cream); text-decoration:none; font-size:0.78rem; letter-spacing:0.18em; text-transform:uppercase; font-weight:400; transition:color 0.2s; cursor:pointer; }
+    .nav-links a:hover { color:var(--gold); }
+    .nav-cart { position:relative; cursor:pointer; }
+    .nav-cart svg { color:var(--paper); width:22px; height:22px; transition:color 0.2s; }
+    .nav-cart:hover svg { color:var(--gold); }
+    .cart-badge { position:absolute; top:-6px; right:-8px; background:var(--red); color:white; font-size:0.6rem; font-weight:700; width:17px; height:17px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+
+    /* PAGES */
+    .page { display:none; }
+    .page.active { display:block; }
+
+    /* HERO */
+    .hero { min-height:92vh; display:grid; grid-template-columns:1fr 1fr; overflow:hidden; }
+    .hero-left { background:var(--ink); display:flex; flex-direction:column; justify-content:center; padding:6rem 5rem 6rem 6rem; position:relative; }
+    .hero-left::after { content:'読'; position:absolute; right:-0.1em; bottom:-0.1em; font-family:'Noto Serif JP',serif; font-size:28vw; line-height:1; color:rgba(255,255,255,0.025); pointer-events:none; }
+    .hero-tag { font-size:0.7rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--gold); margin-bottom:1.5rem; font-weight:400; }
+    .hero-title { font-family:'Shippori Mincho',serif; font-size:clamp(3rem,5vw,5.5rem); font-weight:800; color:var(--paper); line-height:1.05; margin-bottom:1rem; }
+    .hero-title span { color:var(--gold); display:block; }
+    .hero-sub { font-family:'Noto Serif JP',serif; font-size:1.6rem; color:rgba(245,240,232,0.4); margin-bottom:2.5rem; }
+    .hero-desc { color:rgba(245,240,232,0.6); line-height:1.75; font-size:0.95rem; max-width:420px; margin-bottom:3rem; }
+    .hero-btns { display:flex; gap:1rem; }
+    .hero-right { background:var(--cream); display:flex; align-items:center; justify-content:center; padding:4rem; }
+    .card-showcase { position:relative; width:280px; height:380px; }
+    .flash-card { position:absolute; width:220px; height:300px; border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.5rem; box-shadow:0 20px 60px rgba(26,19,16,0.2); transition:transform 0.4s ease; }
+    .fc-1 { background:white; top:0; left:30px; transform:rotate(-5deg); border:1px solid var(--border); z-index:1; }
+    .fc-2 { background:var(--ink); top:40px; left:60px; transform:rotate(2deg); z-index:2; border:1px solid var(--gold); }
+    .fc-3 { background:var(--red); top:80px; left:0; transform:rotate(-1deg); z-index:3; animation:float 4s ease-in-out infinite; }
+    .card-showcase:hover .fc-1 { transform:rotate(-8deg) translate(-10px,-10px); }
+    .card-showcase:hover .fc-2 { transform:rotate(5deg) translate(10px,-5px); }
+    .fc-kana { font-family:'Noto Serif JP',serif; font-size:5rem; line-height:1; }
+    .fc-1 .fc-kana { color:var(--ink); } .fc-2 .fc-kana { color:var(--gold); } .fc-3 .fc-kana { color:white; }
+    .fc-romaji { font-size:0.85rem; letter-spacing:0.2em; text-transform:uppercase; font-weight:600; }
+    .fc-1 .fc-romaji { color:var(--muted); } .fc-2 .fc-romaji { color:rgba(245,240,232,0.6); } .fc-3 .fc-romaji { color:rgba(255,255,255,0.8); }
+    .fc-type { font-size:0.6rem; letter-spacing:0.25em; text-transform:uppercase; padding:0.2rem 0.7rem; border-radius:20px; }
+    .fc-1 .fc-type { background:var(--cream); color:var(--muted); } .fc-2 .fc-type { background:rgba(201,168,76,0.15); color:var(--gold); border:1px solid var(--gold); } .fc-3 .fc-type { background:rgba(255,255,255,0.2); color:white; }
+
+    /* BTN */
+    .btn { display:inline-flex; align-items:center; gap:0.8rem; padding:1rem 2.2rem; font-family:'DM Sans',sans-serif; font-size:0.78rem; letter-spacing:0.2em; text-transform:uppercase; font-weight:600; cursor:pointer; border:none; transition:all 0.25s; text-decoration:none; }
+    .btn-primary { background:var(--red); color:white; }
+    .btn-primary:hover { background:var(--red-deep); transform:translateY(-2px); box-shadow:0 8px 24px rgba(192,57,43,0.35); }
+    .btn-outline { background:transparent; color:var(--paper); border:1px solid rgba(245,240,232,0.3); }
+    .btn-outline:hover { border-color:var(--gold); color:var(--gold); }
+    .btn-dark { background:var(--ink); color:var(--paper); }
+    .btn-dark:hover { background:#2e1f1a; transform:translateY(-2px); }
+    .btn-gold { background:var(--gold); color:var(--ink); }
+    .btn-gold:hover { background:#b8962e; transform:translateY(-2px); }
+
+    /* SECTIONS */
+    section { padding:7rem 6rem; }
+    .section-tag { font-size:0.68rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--red); font-weight:600; margin-bottom:1rem; }
+    .section-title { font-family:'Shippori Mincho',serif; font-size:clamp(2rem,3.5vw,3.5rem); font-weight:800; line-height:1.1; margin-bottom:1.5rem; }
+    .section-desc { color:var(--muted); line-height:1.8; max-width:560px; font-size:0.95rem; }
+
+    /* PRODUCTS */
+    .products { background:var(--paper); }
+    .products-header { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:4rem; }
+    .products-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; }
+    .product-card { background:white; border:1px solid var(--border); overflow:hidden; transition:transform 0.3s, box-shadow 0.3s; }
+    .product-card:hover { transform:translateY(-6px); box-shadow:0 24px 60px rgba(26,19,16,0.12); }
+    .product-img { height:260px; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }
+    .p1-img { background:linear-gradient(135deg,#1a1310 60%,#2e1f1a); }
+    .p2-img { background:linear-gradient(135deg,#c0392b 60%,#7f2316); }
+    .p3-img { background:linear-gradient(135deg,#c9a84c 60%,#8a6d28); }
+    .product-kana-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; padding:16px; }
+    .mini-kana { background:rgba(255,255,255,0.08); border-radius:4px; display:flex; align-items:center; justify-content:center; height:44px; font-family:'Noto Serif JP',serif; font-size:1.1rem; }
+    .p1-img .mini-kana { color:rgba(255,255,255,0.7); }
+    .p2-img .mini-kana { color:rgba(255,255,255,0.8); background:rgba(255,255,255,0.1); }
+    .p3-img .mini-kana { color:rgba(26,19,16,0.8); background:rgba(26,19,16,0.1); }
+    .product-badge { position:absolute; top:14px; right:14px; font-size:0.6rem; letter-spacing:0.2em; text-transform:uppercase; font-weight:700; padding:0.3rem 0.8rem; border-radius:20px; }
+    .badge-new { background:var(--gold); color:var(--ink); }
+    .badge-best { background:white; color:var(--ink); }
+    .badge-bundle { background:var(--red); color:white; }
+    .product-info { padding:1.5rem; border-top:1px solid var(--border); }
+    .product-name { font-family:'Shippori Mincho',serif; font-size:1.1rem; font-weight:600; margin-bottom:0.3rem; }
+    .product-sub { font-size:0.78rem; color:var(--muted); margin-bottom:1.2rem; }
+    .product-footer { display:flex; justify-content:space-between; align-items:center; }
+    .product-price { font-size:1.4rem; font-weight:600; font-family:'Shippori Mincho',serif; }
+    .product-price small { font-size:0.75rem; color:var(--muted); font-family:'DM Sans',sans-serif; font-weight:300; }
+    .add-btn { width:40px; height:40px; background:var(--ink); color:var(--paper); border:none; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s; font-size:1.4rem; line-height:1; }
+    .add-btn:hover { background:var(--red); transform:scale(1.1); }
+
+    /* FEATURES */
+    .features { background:var(--ink); }
+    .features .section-title { color:var(--paper); }
+    .features .section-desc { color:rgba(245,240,232,0.5); }
+    .features .section-tag { color:var(--gold); }
+    .features-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:3rem; margin-top:4rem; }
+    .feat-item { border-top:1px solid rgba(245,240,232,0.1); padding-top:2rem; }
+    .feat-icon { font-family:'Noto Serif JP',serif; font-size:2.5rem; margin-bottom:1rem; color:var(--gold); }
+    .feat-title { font-family:'Shippori Mincho',serif; font-size:1.2rem; font-weight:600; margin-bottom:0.75rem; color:var(--paper); }
+    .feat-text { font-size:0.88rem; color:rgba(245,240,232,0.5); line-height:1.75; }
+
+    /* HOW */
+    .how { background:var(--cream); }
+    .steps { display:grid; grid-template-columns:repeat(4,1fr); gap:2rem; margin-top:4rem; }
+    .step { position:relative; }
+    .step::after { content:'→'; position:absolute; right:-1rem; top:0.5rem; color:var(--gold); font-size:1.2rem; }
+    .step:last-child::after { display:none; }
+    .step-num { font-family:'Shippori Mincho',serif; font-size:4rem; font-weight:800; color:rgba(26,19,16,0.07); line-height:1; margin-bottom:0.5rem; }
+    .step-kana { font-family:'Noto Serif JP',serif; font-size:2rem; color:var(--red); margin-bottom:0.75rem; }
+    .step-title { font-family:'Shippori Mincho',serif; font-size:1rem; font-weight:600; margin-bottom:0.5rem; }
+    .step-text { font-size:0.85rem; color:var(--muted); line-height:1.7; }
+
+    /* CTA BAND */
+    .cta-band { background:var(--red); padding:5rem 6rem; display:flex; align-items:center; justify-content:space-between; gap:2rem; }
+    .cta-band-title { font-family:'Shippori Mincho',serif; font-size:clamp(1.8rem,3vw,3rem); font-weight:800; color:white; line-height:1.1; }
+    .cta-band-sub { font-family:'Noto Serif JP',serif; font-size:1.2rem; color:rgba(255,255,255,0.5); margin-top:0.5rem; }
+    .btn-white { background:white; color:var(--red); white-space:nowrap; }
+    .btn-white:hover { background:var(--paper); transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.2); }
+
+    /* FOOTER */
+    footer { background:var(--ink); border-top:1px solid rgba(245,240,232,0.08); padding:4rem 6rem 2.5rem; }
+    .footer-grid { display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:3rem; margin-bottom:3rem; }
+    .footer-tagline { font-family:'Noto Serif JP',serif; color:rgba(245,240,232,0.3); font-size:0.85rem; margin-top:1rem; line-height:1.6; }
+    .footer-col h4 { font-size:0.68rem; letter-spacing:0.25em; text-transform:uppercase; color:var(--gold); font-weight:600; margin-bottom:1.2rem; }
+    .footer-col ul { list-style:none; }
+    .footer-col li { margin-bottom:0.6rem; }
+    .footer-col a { color:rgba(245,240,232,0.4); text-decoration:none; font-size:0.85rem; transition:color 0.2s; cursor:pointer; }
+    .footer-col a:hover { color:var(--paper); }
+    .footer-bottom { border-top:1px solid rgba(245,240,232,0.08); padding-top:2rem; display:flex; justify-content:space-between; align-items:center; }
+    .footer-bottom p { font-size:0.75rem; color:rgba(245,240,232,0.25); }
+    .footer-kana { font-family:'Noto Serif JP',serif; font-size:0.85rem; color:rgba(245,240,232,0.12); letter-spacing:0.5em; }
+
+    /* ── CART DRAWER ── */
+    .cart-overlay { position:fixed; inset:0; background:rgba(26,19,16,0.6); z-index:500; opacity:0; pointer-events:none; transition:opacity 0.3s; }
+    .cart-overlay.open { opacity:1; pointer-events:all; }
+    .cart-drawer { position:fixed; top:0; right:0; width:420px; height:100vh; background:var(--paper); z-index:501; transform:translateX(100%); transition:transform 0.35s cubic-bezier(.4,0,.2,1); display:flex; flex-direction:column; overflow:hidden; }
+    .cart-drawer.open { transform:translateX(0); }
+    .cart-head { background:var(--ink); padding:1.5rem 2rem; display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--gold); flex-shrink:0; }
+    .cart-head-title { font-family:'Shippori Mincho',serif; font-size:1.2rem; font-weight:700; color:var(--paper); letter-spacing:0.1em; }
+    .cart-close { background:none; border:none; color:var(--paper); cursor:pointer; font-size:1.5rem; line-height:1; transition:color 0.2s; }
+    .cart-close:hover { color:var(--gold); }
+    .cart-items { flex:1; overflow-y:auto; padding:1.5rem 2rem; }
+    .cart-empty { text-align:center; padding:4rem 2rem; }
+    .cart-empty-kana { font-family:'Noto Serif JP',serif; font-size:4rem; color:rgba(26,19,16,0.1); display:block; margin-bottom:1rem; }
+    .cart-empty p { color:var(--muted); font-size:0.9rem; }
+    .cart-item { display:flex; gap:1rem; padding:1rem 0; border-bottom:1px solid var(--border); align-items:flex-start; }
+    .cart-item-icon { width:52px; height:52px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-family:'Noto Serif JP',serif; font-size:1.6rem; flex-shrink:0; }
+    .ci-hira { background:var(--ink); color:var(--gold); }
+    .ci-kata { background:var(--red); color:white; }
+    .ci-bundle { background:var(--gold); color:var(--ink); }
+    .cart-item-info { flex:1; }
+    .cart-item-name { font-family:'Shippori Mincho',serif; font-weight:600; font-size:0.95rem; margin-bottom:0.2rem; }
+    .cart-item-sub { font-size:0.75rem; color:var(--muted); margin-bottom:0.6rem; }
+    .cart-item-qty { display:flex; align-items:center; gap:0.5rem; }
+    .qty-btn { width:26px; height:26px; border:1px solid var(--border); background:white; cursor:pointer; border-radius:3px; font-size:1rem; display:flex; align-items:center; justify-content:center; transition:all 0.15s; }
+    .qty-btn:hover { background:var(--ink); color:white; border-color:var(--ink); }
+    .qty-num { font-size:0.9rem; font-weight:600; min-width:20px; text-align:center; }
+    .cart-item-price { font-family:'Shippori Mincho',serif; font-size:1rem; font-weight:600; white-space:nowrap; }
+    .cart-item-remove { background:none; border:none; cursor:pointer; color:var(--muted); font-size:0.75rem; text-decoration:underline; margin-top:0.4rem; display:block; transition:color 0.15s; }
+    .cart-item-remove:hover { color:var(--red); }
+
+    /* SHIPPING NOTICE */
+    .shipping-notice { background:rgba(201,168,76,0.1); border:1px solid rgba(201,168,76,0.3); border-radius:4px; padding:0.8rem 1rem; margin-bottom:1rem; font-size:0.8rem; color:var(--muted); line-height:1.5; }
+    .shipping-notice strong { color:var(--gold); }
+
+    .cart-foot { padding:1.5rem 2rem; border-top:1px solid var(--border); background:white; flex-shrink:0; }
+    .cart-subtotal { display:flex; justify-content:space-between; margin-bottom:0.5rem; font-size:0.85rem; color:var(--muted); }
+    .cart-shipping-row { display:flex; justify-content:space-between; margin-bottom:1rem; font-size:0.85rem; color:var(--muted); }
+    .cart-total { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:1.5rem; padding-top:0.75rem; border-top:1px solid var(--border); }
+    .cart-total span:first-child { font-family:'Shippori Mincho',serif; font-size:1rem; font-weight:600; }
+    .cart-total span:last-child { font-family:'Shippori Mincho',serif; font-size:1.4rem; font-weight:800; }
+    .checkout-btn { width:100%; padding:1.1rem; background:var(--red); color:white; border:none; font-family:'DM Sans',sans-serif; font-size:0.8rem; letter-spacing:0.2em; text-transform:uppercase; font-weight:600; cursor:pointer; transition:all 0.25s; }
+    .checkout-btn:hover { background:var(--red-deep); }
+    .secure-note { text-align:center; margin-top:0.8rem; font-size:0.7rem; color:var(--muted); letter-spacing:0.05em; }
+
+    /* ── CHECKOUT PAGE ── */
+    .checkout-page { min-height:100vh; display:grid; grid-template-columns:1fr 420px; }
+    .checkout-form-col { padding:4rem; background:var(--paper); overflow-y:auto; }
+    .checkout-summary-col { background:var(--ink); padding:4rem 3rem; overflow-y:auto; }
+    .checkout-logo { margin-bottom:3rem; }
+    .checkout-step-title { font-family:'Shippori Mincho',serif; font-size:1.5rem; font-weight:700; margin-bottom:2rem; padding-bottom:1rem; border-bottom:1px solid var(--border); }
+    .form-section { margin-bottom:2.5rem; }
+    .form-section-title { font-size:0.7rem; letter-spacing:0.25em; text-transform:uppercase; color:var(--red); font-weight:600; margin-bottom:1.2rem; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem; }
+    .form-row.single { grid-template-columns:1fr; }
+    .form-group { display:flex; flex-direction:column; gap:0.4rem; }
+    .form-group label { font-size:0.75rem; letter-spacing:0.08em; color:var(--muted); font-weight:400; text-transform:uppercase; }
+    .form-group input, .form-group select { padding:0.85rem 1rem; border:1px solid var(--border); background:white; font-family:'DM Sans',sans-serif; font-size:0.9rem; color:var(--ink); outline:none; transition:border-color 0.2s; border-radius:2px; }
+    .form-group input:focus, .form-group select:focus { border-color:var(--gold); }
+    .form-group select { cursor:pointer; }
+
+    /* STRIPE CARD ELEMENT */
+    .stripe-card-wrap { padding:0.85rem 1rem; border:1px solid var(--border); background:white; border-radius:2px; transition:border-color 0.2s; }
+    .stripe-card-wrap.focused { border-color:var(--gold); }
+
+    .shipping-options { display:flex; flex-direction:column; gap:0.75rem; }
+    .shipping-opt { display:flex; align-items:center; justify-content:space-between; padding:1rem; border:1px solid var(--border); cursor:pointer; transition:all 0.2s; border-radius:2px; }
+    .shipping-opt:hover { border-color:var(--gold); background:rgba(201,168,76,0.05); }
+    .shipping-opt.selected { border-color:var(--gold); background:rgba(201,168,76,0.08); }
+    .shipping-opt-left { display:flex; align-items:center; gap:0.75rem; }
+    .shipping-radio { width:16px; height:16px; border-radius:50%; border:2px solid var(--border); transition:all 0.2s; flex-shrink:0; }
+    .shipping-opt.selected .shipping-radio { border-color:var(--gold); background:var(--gold); box-shadow:inset 0 0 0 3px white; }
+    .shipping-opt-name { font-size:0.88rem; font-weight:600; }
+    .shipping-opt-delay { font-size:0.75rem; color:var(--muted); }
+    .shipping-opt-price { font-family:'Shippori Mincho',serif; font-weight:600; font-size:0.95rem; }
+
+    .place-order-btn { width:100%; padding:1.2rem; background:var(--red); color:white; border:none; font-family:'DM Sans',sans-serif; font-size:0.82rem; letter-spacing:0.2em; text-transform:uppercase; font-weight:700; cursor:pointer; transition:all 0.25s; margin-top:2rem; border-radius:2px; display:flex; align-items:center; justify-content:center; gap:0.8rem; }
+    .place-order-btn:hover { background:var(--red-deep); }
+    .place-order-btn:disabled { background:var(--muted); cursor:not-allowed; }
+    .back-link { display:inline-flex; align-items:center; gap:0.5rem; font-size:0.8rem; color:var(--muted); cursor:pointer; margin-bottom:2rem; transition:color 0.2s; background:none; border:none; font-family:'DM Sans',sans-serif; }
+    .back-link:hover { color:var(--ink); }
+
+    /* CHECKOUT SUMMARY */
+    .cs-title { font-family:'Shippori Mincho',serif; font-size:1rem; font-weight:700; color:var(--paper); margin-bottom:1.5rem; letter-spacing:0.05em; border-bottom:1px solid rgba(245,240,232,0.1); padding-bottom:1rem; }
+    .cs-item { display:flex; align-items:center; gap:1rem; margin-bottom:1.2rem; }
+    .cs-item-icon { width:44px; height:44px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-family:'Noto Serif JP',serif; font-size:1.4rem; flex-shrink:0; }
+    .cs-item-info { flex:1; }
+    .cs-item-name { font-size:0.85rem; color:var(--paper); font-weight:600; }
+    .cs-item-qty { font-size:0.75rem; color:rgba(245,240,232,0.4); }
+    .cs-item-price { font-family:'Shippori Mincho',serif; font-size:0.95rem; font-weight:600; color:var(--paper); white-space:nowrap; }
+    .cs-divider { border:none; border-top:1px solid rgba(245,240,232,0.1); margin:1.5rem 0; }
+    .cs-row { display:flex; justify-content:space-between; margin-bottom:0.6rem; font-size:0.83rem; color:rgba(245,240,232,0.5); }
+    .cs-total { display:flex; justify-content:space-between; align-items:baseline; margin-top:1rem; padding-top:1rem; border-top:1px solid rgba(245,240,232,0.15); }
+    .cs-total span:first-child { font-size:0.85rem; color:var(--paper); letter-spacing:0.05em; }
+    .cs-total span:last-child { font-family:'Shippori Mincho',serif; font-size:1.6rem; font-weight:800; color:var(--gold); }
+
+    /* ── CONFIRMATION PAGE ── */
+    .confirm-page { min-height:100vh; background:var(--ink); display:flex; align-items:center; justify-content:center; padding:4rem; }
+    .confirm-box { max-width:560px; width:100%; text-align:center; }
+    .confirm-kana { font-family:'Noto Serif JP',serif; font-size:6rem; color:var(--gold); display:block; margin-bottom:1rem; animation:fadeUp 0.8s ease; }
+    .confirm-title { font-family:'Shippori Mincho',serif; font-size:2.5rem; font-weight:800; color:var(--paper); margin-bottom:1rem; animation:fadeUp 0.8s 0.1s ease both; }
+    .confirm-sub { font-family:'Noto Serif JP',serif; font-size:1rem; color:rgba(245,240,232,0.4); margin-bottom:2rem; animation:fadeUp 0.8s 0.2s ease both; }
+    .confirm-msg { color:rgba(245,240,232,0.6); font-size:0.92rem; line-height:1.8; margin-bottom:2.5rem; animation:fadeUp 0.8s 0.3s ease both; }
+    .confirm-order { background:rgba(255,255,255,0.04); border:1px solid rgba(201,168,76,0.2); padding:1.5rem; margin-bottom:2.5rem; text-align:left; animation:fadeUp 0.8s 0.4s ease both; }
+    .confirm-order-row { display:flex; justify-content:space-between; margin-bottom:0.5rem; font-size:0.85rem; }
+    .confirm-order-row span:first-child { color:rgba(245,240,232,0.4); }
+    .confirm-order-row span:last-child { color:var(--paper); font-weight:600; }
+    .confirm-btns { display:flex; gap:1rem; justify-content:center; animation:fadeUp 0.8s 0.5s ease both; }
+
+    /* TOAST */
+    .toast { position:fixed; bottom:2rem; right:2rem; background:var(--ink); color:var(--paper); padding:1rem 1.5rem; border-left:3px solid var(--gold); font-size:0.85rem; transform:translateY(120%); transition:transform 0.35s cubic-bezier(.34,1.56,.64,1); z-index:600; max-width:300px; }
+    .toast.show { transform:translateY(0); }
+    .toast strong { color:var(--gold); display:block; margin-bottom:0.2rem; }
+
+    /* STRIPE MOCK */
+    .stripe-badge { display:flex; align-items:center; gap:0.5rem; font-size:0.72rem; color:var(--muted); margin-top:0.5rem; justify-content:center; }
+    .stripe-badge svg { opacity:0.5; }
+
+    /* ANIMATIONS */
+    @keyframes float { 0%,100%{transform:rotate(-1deg) translateY(0)} 50%{transform:rotate(-1deg) translateY(-12px)} }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes spin { to{transform:rotate(360deg)} }
+
+    .spinner { width:18px; height:18px; border:2px solid rgba(255,255,255,0.3); border-top-color:white; border-radius:50%; animation:spin 0.7s linear infinite; }
+
+    /* ERROR */
+    .form-error { font-size:0.75rem; color:var(--red); margin-top:0.3rem; }
+    .stripe-error { font-size:0.78rem; color:var(--red); margin-top:0.5rem; }
+
+    @media(max-width:900px) {
+      nav { padding:1rem 1.5rem; }
+      .nav-links { display:none; }
+      .hero { grid-template-columns:1fr; }
+      .hero-right { display:none; }
+      .hero-left { padding:4rem 2rem; }
+      section { padding:4rem 1.5rem; }
+      .features-grid, .products-grid { grid-template-columns:1fr; }
+      .steps { grid-template-columns:1fr 1fr; }
+      .footer-grid { grid-template-columns:1fr 1fr; }
+      .cta-band { flex-direction:column; text-align:center; padding:3rem 1.5rem; }
+      .products-header { flex-direction:column; align-items:flex-start; gap:1rem; }
+      .checkout-page { grid-template-columns:1fr; }
+      .checkout-summary-col { order:-1; padding:2rem 1.5rem; }
+      .checkout-form-col { padding:2rem 1.5rem; }
+      .cart-drawer { width:100vw; }
+      .form-row { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo" onclick="goHome()">
+    <span class="logo-jp">読</span>
+    <span class="logo-en">YOMI</span>
+  </div>
+  <ul class="nav-links">
+    <li><a onclick="goHome(); scrollTo('#produits')">Produits</a></li>
+    <li><a onclick="goHome(); scrollTo('#methode')">Méthode</a></li>
+    <li><a onclick="goHome()">À propos</a></li>
+  </ul>
+  <div class="nav-cart" onclick="openCart()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"/>
+    </svg>
+    <span class="cart-badge" id="cartCount">0</span>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════ HOME PAGE ═══ -->
+<div id="homePage" class="page active">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-left">
+      <p class="hero-tag">Apprenez le japonais autrement</p>
+      <h1 class="hero-title">Maîtrisez<span>les kana.</span></h1>
+      <p class="hero-sub">ひらがな • カタカナ</p>
+      <p class="hero-desc">Des flash cards soigneusement conçues pour apprendre les hiragana et katakana rapidement, avec méthode et plaisir.</p>
+      <div class="hero-btns">
+        <button class="btn btn-primary" onclick="document.getElementById('produits').scrollIntoView({behavior:'smooth'})">
+          Découvrir les packs
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+        <button class="btn btn-outline" onclick="document.getElementById('methode').scrollIntoView({behavior:'smooth'})">Notre méthode</button>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="card-showcase">
+        <div class="flash-card fc-1"><span class="fc-kana">あ</span><span class="fc-romaji">A</span><span class="fc-type">Hiragana</span></div>
+        <div class="flash-card fc-2"><span class="fc-kana">ア</span><span class="fc-romaji">A</span><span class="fc-type">Katakana</span></div>
+        <div class="flash-card fc-3"><span class="fc-kana">か</span><span class="fc-romaji">KA</span><span class="fc-type">Hiragana</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRODUCTS -->
+  <section class="products" id="produits">
+    <div class="products-header">
+      <div>
+        <p class="section-tag">Nos packs</p>
+        <h2 class="section-title">Choisissez votre<br>niveau de départ.</h2>
+      </div>
+    </div>
+    <div class="products-grid">
+      <div class="product-card">
+        <div class="product-img p1-img">
+          <div class="product-kana-grid">
+            <div class="mini-kana">あ</div><div class="mini-kana">い</div><div class="mini-kana">う</div><div class="mini-kana">え</div>
+            <div class="mini-kana">か</div><div class="mini-kana">き</div><div class="mini-kana">く</div><div class="mini-kana">け</div>
+            <div class="mini-kana">さ</div><div class="mini-kana">し</div><div class="mini-kana">す</div><div class="mini-kana">せ</div>
+          </div>
+          <span class="product-badge badge-best">Best-seller</span>
+        </div>
+        <div class="product-info">
+          <div class="product-name">Pack Hiragana</div>
+          <div class="product-sub">46 cartes • Débutant • Guide phonétique inclus</div>
+          <div class="product-footer">
+            <div class="product-price">24,90€ <small>/ pack</small></div>
+            <button class="add-btn" onclick="addToCart({id:'hira',name:'Pack Hiragana',sub:'46 cartes • Hiragana',price:24.90,icon:'あ',color:'ci-hira'})">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-img p2-img">
+          <div class="product-kana-grid">
+            <div class="mini-kana">ア</div><div class="mini-kana">イ</div><div class="mini-kana">ウ</div><div class="mini-kana">エ</div>
+            <div class="mini-kana">カ</div><div class="mini-kana">キ</div><div class="mini-kana">ク</div><div class="mini-kana">ケ</div>
+            <div class="mini-kana">サ</div><div class="mini-kana">シ</div><div class="mini-kana">ス</div><div class="mini-kana">セ</div>
+          </div>
+          <span class="product-badge badge-new">Nouveau</span>
+        </div>
+        <div class="product-info">
+          <div class="product-name">Pack Katakana</div>
+          <div class="product-sub">46 cartes • Débutant • Guide phonétique inclus</div>
+          <div class="product-footer">
+            <div class="product-price">24,90€ <small>/ pack</small></div>
+            <button class="add-btn" onclick="addToCart({id:'kata',name:'Pack Katakana',sub:'46 cartes • Katakana',price:24.90,icon:'ア',color:'ci-kata'})">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-img p3-img">
+          <div class="product-kana-grid">
+            <div class="mini-kana">あ</div><div class="mini-kana">ア</div><div class="mini-kana">い</div><div class="mini-kana">イ</div>
+            <div class="mini-kana">う</div><div class="mini-kana">ウ</div><div class="mini-kana">え</div><div class="mini-kana">エ</div>
+            <div class="mini-kana">か</div><div class="mini-kana">カ</div><div class="mini-kana">き</div><div class="mini-kana">キ</div>
+          </div>
+          <span class="product-badge badge-bundle">Bundle −20%</span>
+        </div>
+        <div class="product-info">
+          <div class="product-name">Bundle Complet</div>
+          <div class="product-sub">92 cartes • Hiragana + Katakana • Économisez 10€</div>
+          <div class="product-footer">
+            <div class="product-price">39,90€ <small>/ bundle</small></div>
+            <button class="add-btn" onclick="addToCart({id:'bundle',name:'Bundle Complet',sub:'92 cartes • Hira + Kata',price:39.90,icon:'読',color:'ci-bundle'})">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features">
+    <p class="section-tag">Pourquoi YOMI</p>
+    <h2 class="section-title" style="color:var(--paper)">Conçu pour apprendre<br>vite et bien.</h2>
+    <div class="features-grid">
+      <div class="feat-item"><div class="feat-icon">筆</div><div class="feat-title">Calligraphie authentique</div><p class="feat-text">Caractères tracés selon les standards japonais traditionnels, traits dans le bon ordre.</p></div>
+      <div class="feat-item"><div class="feat-icon">脳</div><div class="feat-title">Méthode mnémotechnique</div><p class="feat-text">Des indices visuels et histoires courtes au dos de chaque carte pour ancrer en mémoire.</p></div>
+      <div class="feat-item"><div class="feat-icon">紙</div><div class="feat-title">Papier premium 350g</div><p class="feat-text">Cartes épaisses et robustes, finition mate anti-reflets. Résistent à des milliers de révisions.</p></div>
+      <div class="feat-item"><div class="feat-icon">順</div><div class="feat-title">Progressif & structuré</div><p class="feat-text">Cartes organisées par groupes phonétiques pour un apprentissage logique et fluide.</p></div>
+      <div class="feat-item"><div class="feat-icon">音</div><div class="feat-title">Guide phonétique inclus</div><p class="feat-text">Un livret de prononciation offert avec chaque commande, en français.</p></div>
+      <div class="feat-item"><div class="feat-icon">贈</div><div class="feat-title">Emballage cadeau</div><p class="feat-text">Livré dans une boîte élégante inspirée des coffrets japonais traditionnels.</p></div>
+    </div>
+  </section>
+
+  <!-- HOW -->
+  <section class="how" id="methode">
+    <p class="section-tag">La méthode YOMI</p>
+    <h2 class="section-title">De zéro à la lecture<br>en 30 jours.</h2>
+    <div class="steps">
+      <div class="step"><div class="step-num">01</div><div class="step-kana">見</div><div class="step-title">Observer</div><p class="step-text">Regardez le caractère et son mnémotechnique visuel.</p></div>
+      <div class="step"><div class="step-num">02</div><div class="step-kana">書</div><div class="step-title">Tracer</div><p class="step-text">Recopiez en suivant le guide des traits au dos de la carte.</p></div>
+      <div class="step"><div class="step-num">03</div><div class="step-kana">聞</div><div class="step-title">Prononcer</div><p class="step-text">Répétez le son à voix haute avec le guide phonétique.</p></div>
+      <div class="step"><div class="step-num">04</div><div class="step-kana">読</div><div class="step-title">Lire</div><p class="step-text">Testez-vous avec les exercices de lecture progressifs.</p></div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <div class="cta-band">
+    <div>
+      <div class="cta-band-title">Prêt à commencer<br>votre voyage ?</div>
+      <div class="cta-band-sub">始めましょう — Commençons !</div>
+    </div>
+    <button class="btn btn-white" onclick="document.getElementById('produits').scrollIntoView({behavior:'smooth'})">
+      Commander maintenant
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </button>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="logo"><span class="logo-jp">読</span><span class="logo-en">YOMI</span></div>
+        <p class="footer-tagline">読み — "Yomi" signifie<br>"lecture" en japonais.<br>Notre mission : vous apprendre à lire.</p>
+      </div>
+      <div class="footer-col"><h4>Boutique</h4><ul><li><a>Pack Hiragana</a></li><li><a>Pack Katakana</a></li><li><a>Bundle Complet</a></li></ul></div>
+      <div class="footer-col"><h4>Aide</h4><ul><li><a>FAQ</a></li><li><a>Livraison</a></li><li><a>Retours</a></li><li><a>Contact</a></li></ul></div>
+      <div class="footer-col"><h4>YOMI</h4><ul><li><a>Notre histoire</a></li><li><a>La méthode</a></li><li><a>Instagram</a></li></ul></div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 YOMI — Tous droits réservés</p>
+      <p class="footer-kana">あ い う え お</p>
+      <p>Paiement sécurisé · Livraison France & Europe</p>
+    </div>
+  </footer>
+</div>
+
+<!-- ═══════════════════════════════════════════ CHECKOUT PAGE ═══ -->
+<div id="checkoutPage" class="page">
+  <div class="checkout-page">
+    <!-- LEFT: FORM -->
+    <div class="checkout-form-col">
+      <div class="checkout-logo">
+        <div class="logo" onclick="goHome()" style="filter:invert(0)">
+          <span class="logo-jp" style="color:var(--gold)">読</span>
+          <span class="logo-en" style="color:var(--ink)">YOMI</span>
+        </div>
+      </div>
+      <button class="back-link" onclick="openCart()">
+        ← Retour au panier
+      </button>
+      <div class="checkout-step-title">Informations de livraison</div>
+
+      <div id="checkoutFormWrap">
+        <!-- CONTACT -->
+        <div class="form-section">
+          <div class="form-section-title">Contact</div>
+          <div class="form-row single">
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="f-email" placeholder="votre@email.com"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- ADRESSE -->
+        <div class="form-section">
+          <div class="form-section-title">Adresse de livraison</div>
+          <div class="form-row">
+            <div class="form-group"><label>Prénom</label><input type="text" id="f-fname" placeholder="Yuki"/></div>
+            <div class="form-group"><label>Nom</label><input type="text" id="f-lname" placeholder="Tanaka"/></div>
+          </div>
+          <div class="form-row single">
+            <div class="form-group"><label>Adresse</label><input type="text" id="f-addr" placeholder="12 rue des Cerisiers"/></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Code postal</label><input type="text" id="f-zip" placeholder="75001"/></div>
+            <div class="form-group"><label>Ville</label><input type="text" id="f-city" placeholder="Paris"/></div>
+          </div>
+          <div class="form-row single">
+            <div class="form-group">
+              <label>Pays</label>
+              <select id="f-country" onchange="updateShipping()">
+                <option value="">— Sélectionnez votre pays —</option>
+                <optgroup label="🇫🇷 France">
+                  <option value="FR">France métropolitaine</option>
+                  <option value="DOM">DOM-TOM (Guadeloupe, Martinique…)</option>
+                </optgroup>
+                <optgroup label="🇪🇺 Europe">
+                  <option value="BE">Belgique</option>
+                  <option value="CH">Suisse</option>
+                  <option value="LU">Luxembourg</option>
+                  <option value="DE">Allemagne</option>
+                  <option value="ES">Espagne</option>
+                  <option value="IT">Italie</option>
+                  <option value="NL">Pays-Bas</option>
+                  <option value="PT">Portugal</option>
+                  <option value="AT">Autriche</option>
+                  <option value="EU_OTHER">Autre pays Europe</option>
+                </optgroup>
+                <optgroup label="🌍 Reste du monde">
+                  <option value="CA">Canada</option>
+                  <option value="US">États-Unis</option>
+                  <option value="JP">Japon</option>
+                  <option value="AU">Australie</option>
+                  <option value="WORLD">Autre pays</option>
+                </optgroup>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- LIVRAISON -->
+        <div class="form-section" id="shippingSection" style="display:none">
+          <div class="form-section-title">Mode de livraison</div>
+          <div class="shipping-options" id="shippingOptions"></div>
+        </div>
+
+        <!-- PAIEMENT -->
+        <div class="form-section">
+          <div class="form-section-title">Paiement sécurisé</div>
+          <div class="form-row single">
+            <div class="form-group"><label>Titulaire de la carte</label><input type="text" id="f-cardholder" placeholder="Prénom Nom"/></div>
+          </div>
+          <!-- Stripe Card Element will mount here -->
+          <div class="form-group" style="margin-bottom:1rem">
+            <label>Numéro de carte</label>
+            <div id="card-element" class="stripe-card-wrap">
+              <!-- Stripe injecte ici -->
+            </div>
+            <div class="stripe-error" id="card-errors"></div>
+          </div>
+          <div class="stripe-badge">
+            <svg width="38" height="16" viewBox="0 0 60 25" fill="none"><rect width="60" height="25" rx="4" fill="#635BFF"/><text x="8" y="17" font-family="Arial" font-size="11" font-weight="700" fill="white">stripe</text></svg>
+            Paiement 100% sécurisé par Stripe
+          </div>
+        </div>
+
+        <button class="place-order-btn" id="placeOrderBtn" onclick="placeOrder()">
+          <span id="btnText">Confirmer la commande</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </button>
+        <div class="stripe-badge" style="margin-top:0.75rem">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Vos données sont chiffrées et sécurisées
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: SUMMARY -->
+    <div class="checkout-summary-col">
+      <div class="cs-title">Récapitulatif de commande</div>
+      <div id="csSummaryItems"></div>
+      <hr class="cs-divider"/>
+      <div class="cs-row"><span>Sous-total</span><span id="csSubtotal">—</span></div>
+      <div class="cs-row"><span>Livraison</span><span id="csShipping">À calculer</span></div>
+      <div class="cs-total"><span>TOTAL</span><span id="csTotal">—</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ CONFIRMATION PAGE ═══ -->
+<div id="confirmPage" class="page">
+  <div class="confirm-page">
+    <div class="confirm-box">
+      <span class="confirm-kana">ありがとう</span>
+      <h2 class="confirm-title">Commande confirmée !</h2>
+      <p class="confirm-sub">Merci pour votre achat</p>
+      <p class="confirm-msg">Un email de confirmation a été envoyé à <strong id="confirmEmail"></strong>.<br>Votre commande sera expédiée sous 1–2 jours ouvrés.</p>
+      <div class="confirm-order" id="confirmOrderDetails"></div>
+      <div class="confirm-btns">
+        <button class="btn btn-gold" onclick="goHome()">← Retour à la boutique</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CART DRAWER -->
+<div class="cart-overlay" id="cartOverlay" onclick="closeCart()"></div>
+<div class="cart-drawer" id="cartDrawer">
+  <div class="cart-head">
+    <div class="cart-head-title">Mon Panier 🛒</div>
+    <button class="cart-close" onclick="closeCart()">✕</button>
+  </div>
+  <div class="cart-items" id="cartItems">
+    <div class="cart-empty">
+      <span class="cart-empty-kana">空</span>
+      <p>Votre panier est vide.<br>Ajoutez des flash cards !</p>
+    </div>
+  </div>
+  <div class="cart-foot" id="cartFoot" style="display:none">
+    <div class="shipping-notice">
+      <strong>🚚 Livraison</strong> calculée à l'étape suivante selon votre pays.
+    </div>
+    <div class="cart-subtotal"><span>Sous-total</span><span id="cartSubtotal">0,00€</span></div>
+    <button class="checkout-btn" onclick="goCheckout()">
+      Passer commande →
+    </button>
+    <div class="secure-note">🔒 Paiement sécurisé par Stripe</div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <strong id="toastTitle"></strong>
+  <span id="toastMsg"></span>
+</div>
+
+<!-- STRIPE JS -->
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+// ══════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════
+let cart = [];
+let selectedShipping = null;
+let stripe, cardElement;
+
+const SHIPPING_RATES = {
+  FR:        [{id:'std',name:'Colissimo Standard',delay:'3–5 jours ouvrés',price:4.90},{id:'exp',name:'Chronopost Express',delay:'1–2 jours ouvrés',price:8.90}],
+  DOM:       [{id:'std',name:'Colissimo DOM',delay:'7–15 jours ouvrés',price:9.90}],
+  BE:        [{id:'std',name:'Standard Europe',delay:'4–6 jours ouvrés',price:6.90},{id:'exp',name:'Express Europe',delay:'2–3 jours ouvrés',price:12.90}],
+  CH:        [{id:'std',name:'Standard Suisse',delay:'5–7 jours ouvrés',price:9.90},{id:'exp',name:'Express Suisse',delay:'2–3 jours ouvrés',price:16.90}],
+  LU:        [{id:'std',name:'Standard Europe',delay:'4–6 jours ouvrés',price:6.90}],
+  DE:        [{id:'std',name:'Standard Europe',delay:'4–6 jours ouvrés',price:6.90},{id:'exp',name:'Express Europe',delay:'2–3 jours ouvrés',price:12.90}],
+  ES:        [{id:'std',name:'Standard Europe',delay:'5–7 jours ouvrés',price:7.90}],
+  IT:        [{id:'std',name:'Standard Europe',delay:'5–7 jours ouvrés',price:7.90}],
+  NL:        [{id:'std',name:'Standard Europe',delay:'4–6 jours ouvrés',price:6.90}],
+  PT:        [{id:'std',name:'Standard Europe',delay:'5–8 jours ouvrés',price:7.90}],
+  AT:        [{id:'std',name:'Standard Europe',delay:'5–7 jours ouvrés',price:7.90}],
+  EU_OTHER:  [{id:'std',name:'Standard Europe',delay:'6–10 jours ouvrés',price:9.90}],
+  CA:        [{id:'std',name:'Standard International',delay:'10–15 jours ouvrés',price:14.90}],
+  US:        [{id:'std',name:'Standard International',delay:'10–15 jours ouvrés',price:14.90}],
+  JP:        [{id:'std',name:'Standard Japon',delay:'10–14 jours ouvrés',price:16.90}],
+  AU:        [{id:'std',name:'Standard International',delay:'12–18 jours ouvrés',price:17.90}],
+  WORLD:     [{id:'std',name:'Standard International',delay:'12–20 jours ouvrés',price:19.90}],
+};
+
+// ══════════════════════════════════════════════════
+// STRIPE INIT
+// ══════════════════════════════════════════════════
+// ⚠️  Remplacez par votre clé publique Stripe (pk_live_...)
+const STRIPE_PK = 'pk_test_51TO2k9J32zuLrvR7XqqSjZwqKURi2uzRzpps0ncB5Hz6d5R84jEoYMMJH9vcpaaZkIWzsV6nZtNmRm4NsBzWCNLC00dOXg9WXe';
+
+function initStripe() {
+  try {
+    stripe = Stripe(STRIPE_PK);
+    const elements = stripe.elements({
+      fonts: [{ cssSrc: 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400&display=swap' }]
+    });
+    cardElement = elements.create('card', {
+      style: {
+        base: { fontFamily: "'DM Sans', sans-serif", fontSize: '15px', color: '#1a1310', '::placeholder': { color: '#b0a89e' } },
+        invalid: { color: '#c0392b' }
+      },
+      hidePostalCode: true
+    });
+    cardElement.mount('#card-element');
+    cardElement.on('focus', () => document.querySelector('.stripe-card-wrap').classList.add('focused'));
+    cardElement.on('blur', () => document.querySelector('.stripe-card-wrap').classList.remove('focused'));
+    cardElement.on('change', e => {
+      document.getElementById('card-errors').textContent = e.error ? e.error.message : '';
+    });
+  } catch(e) {
+    // Si la clé Stripe n'est pas configurée, on affiche un placeholder
+    document.getElementById('card-element').innerHTML = `
+      <div style="color:var(--muted);font-size:0.82rem;padding:0.3rem 0">
+        ⚠️ Configurez votre clé Stripe dans le fichier pour activer le paiement.<br>
+        <code style="font-size:0.72rem;background:var(--cream);padding:0.2rem 0.4rem;border-radius:2px">const STRIPE_PK = 'pk_live_...'</code>
+      </div>`;
+  }
+}
+
+// ══════════════════════════════════════════════════
+// CART
+// ══════════════════════════════════════════════════
+function addToCart(product) {
+  const existing = cart.find(i => i.id === product.id);
+  if (existing) { existing.qty++; }
+  else { cart.push({...product, qty:1}); }
+  updateCartUI();
+  openCart();
+  showToast(product.name + ' ajouté !', '1 article ajouté à votre panier.');
+}
+
+function removeFromCart(id) {
+  cart = cart.filter(i => i.id !== id);
+  updateCartUI();
+}
+
+function changeQty(id, delta) {
+  const item = cart.find(i => i.id === id);
+  if (!item) return;
+  item.qty += delta;
+  if (item.qty <= 0) removeFromCart(id);
+  else updateCartUI();
+}
+
+function cartSubtotal() {
+  return cart.reduce((s, i) => s + i.price * i.qty, 0);
+}
+
+function fmt(n) {
+  return n.toFixed(2).replace('.', ',') + '€';
+}
+
+function updateCartUI() {
+  const count = cart.reduce((s, i) => s + i.qty, 0);
+  document.getElementById('cartCount').textContent = count;
+
+  const wrap = document.getElementById('cartItems');
+  const foot = document.getElementById('cartFoot');
+
+  if (cart.length === 0) {
+    wrap.innerHTML = `<div class="cart-empty"><span class="cart-empty-kana">空</span><p>Votre panier est vide.<br>Ajoutez des flash cards !</p></div>`;
+    foot.style.display = 'none';
+    return;
+  }
+
+  wrap.innerHTML = cart.map(i => `
+    <div class="cart-item">
+      <div class="cart-item-icon ${i.color}">${i.icon}</div>
+      <div class="cart-item-info">
+        <div class="cart-item-name">${i.name}</div>
+        <div class="cart-item-sub">${i.sub}</div>
+        <div class="cart-item-qty">
+          <button class="qty-btn" onclick="changeQty('${i.id}',-1)">−</button>
+          <span class="qty-num">${i.qty}</span>
+          <button class="qty-btn" onclick="changeQty('${i.id}',1)">+</button>
+        </div>
+        <button class="cart-item-remove" onclick="removeFromCart('${i.id}')">Supprimer</button>
+      </div>
+      <div class="cart-item-price">${fmt(i.price * i.qty)}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('cartSubtotal').textContent = fmt(cartSubtotal());
+  foot.style.display = 'block';
+}
+
+function openCart() {
+  document.getElementById('cartOverlay').classList.add('open');
+  document.getElementById('cartDrawer').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCart() {
+  document.getElementById('cartOverlay').classList.remove('open');
+  document.getElementById('cartDrawer').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ══════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function goHome() {
+  showPage('homePage');
+  closeCart();
+}
+
+function goCheckout() {
+  if (cart.length === 0) return;
+  closeCart();
+  showPage('checkoutPage');
+  updateCheckoutSummary();
+  if (!stripe) initStripe();
+}
+
+// ══════════════════════════════════════════════════
+// SHIPPING
+// ══════════════════════════════════════════════════
+function updateShipping() {
+  const country = document.getElementById('f-country').value;
+  const section = document.getElementById('shippingSection');
+  const opts = document.getElementById('shippingOptions');
+  selectedShipping = null;
+
+  if (!country) { section.style.display = 'none'; updateCheckoutSummary(); return; }
+
+  const rates = SHIPPING_RATES[country] || SHIPPING_RATES['WORLD'];
+  section.style.display = 'block';
+
+  opts.innerHTML = rates.map((r, i) => `
+    <div class="shipping-opt${i===0?' selected':''}" onclick="selectShipping('${country}',${i})">
+      <div class="shipping-opt-left">
+        <div class="shipping-radio" id="radio-${i}"></div>
+        <div>
+          <div class="shipping-opt-name">${r.name}</div>
+          <div class="shipping-opt-delay">📦 ${r.delay}</div>
+        </div>
+      </div>
+      <div class="shipping-opt-price">${r.price === 0 ? 'Offert' : fmt(r.price)}</div>
+    </div>
+  `).join('');
+
+  selectedShipping = rates[0];
+  updateCheckoutSummary();
+}
+
+function selectShipping(country, idx) {
+  document.querySelectorAll('.shipping-opt').forEach((el,i) => {
+    el.classList.toggle('selected', i === idx);
+  });
+  const rates = SHIPPING_RATES[country] || SHIPPING_RATES['WORLD'];
+  selectedShipping = rates[idx];
+  updateCheckoutSummary();
+}
+
+// ══════════════════════════════════════════════════
+// CHECKOUT SUMMARY
+// ══════════════════════════════════════════════════
+function updateCheckoutSummary() {
+  const sub = cartSubtotal();
+  const ship = selectedShipping ? selectedShipping.price : null;
+  const total = ship !== null ? sub + ship : sub;
+
+  document.getElementById('csSummaryItems').innerHTML = cart.map(i => `
+    <div class="cs-item">
+      <div class="cs-item-icon ${i.color}">${i.icon}</div>
+      <div class="cs-item-info">
+        <div class="cs-item-name">${i.name}</div>
+        <div class="cs-item-qty">× ${i.qty}</div>
+      </div>
+      <div class="cs-item-price">${fmt(i.price * i.qty)}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('csSubtotal').textContent = fmt(sub);
+  document.getElementById('csShipping').textContent = ship !== null ? fmt(ship) : 'À calculer';
+  document.getElementById('csTotal').textContent = ship !== null ? fmt(total) : fmt(sub) + ' + livraison';
+}
+
+// ══════════════════════════════════════════════════
+// PLACE ORDER
+// ══════════════════════════════════════════════════
+async function placeOrder() {
+  const email = document.getElementById('f-email').value.trim();
+  const fname = document.getElementById('f-fname').value.trim();
+  const lname = document.getElementById('f-lname').value.trim();
+  const addr  = document.getElementById('f-addr').value.trim();
+  const zip   = document.getElementById('f-zip').value.trim();
+  const city  = document.getElementById('f-city').value.trim();
+  const country = document.getElementById('f-country').value;
+
+  if (!email || !fname || !lname || !addr || !zip || !city || !country) {
+    showToast('Champs manquants', 'Veuillez remplir tous les champs obligatoires.');
+    return;
+  }
+  if (!selectedShipping) {
+    showToast('Livraison', 'Veuillez sélectionner un mode de livraison.');
+    return;
+  }
+
+  const btn = document.getElementById('placeOrderBtn');
+  const btnText = document.getElementById('btnText');
+  btn.disabled = true;
+  btnText.innerHTML = '<div class="spinner"></div>';
+
+  try {
+    let paymentMethodId = null;
+
+    if (stripe && cardElement) {
+      const cardholder = document.getElementById('f-cardholder').value.trim();
+      const { paymentMethod, error } = await stripe.createPaymentMethod({
+        type: 'card',
+        card: cardElement,
+        billing_details: { name: cardholder || `${fname} ${lname}`, email }
+      });
+
+      if (error) {
+        document.getElementById('card-errors').textContent = error.message;
+        btn.disabled = false;
+        btnText.textContent = 'Confirmer la commande';
+        return;
+      }
+      paymentMethodId = paymentMethod.id;
+    }
+
+    // ─── ICI : envoyez paymentMethodId + panier à votre backend ───
+    // Exemple avec votre fonction Netlify :
+    //
+    // const res = await fetch('/.netlify/functions/create-payment-intent', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({
+    //     paymentMethodId,
+    //     cart,
+    //     shipping: selectedShipping,
+    //     email,
+    //     address: { fname, lname, addr, zip, city, country }
+    //   })
+    // });
+    // const { clientSecret } = await res.json();
+    // const { error: confirmError } = await stripe.confirmCardPayment(clientSecret);
+    // if (confirmError) { ... }
+
+    // Simulation réussie (à retirer en production)
+    await new Promise(r => setTimeout(r, 1600));
+
+    showConfirmation(email, fname, lname);
+  } catch(e) {
+    showToast('Erreur', 'Une erreur est survenue. Réessayez.');
+    btn.disabled = false;
+    btnText.textContent = 'Confirmer la commande';
+  }
+}
+
+function showConfirmation(email, fname, lname) {
+  const sub = cartSubtotal();
+  const ship = selectedShipping ? selectedShipping.price : 0;
+  const total = sub + ship;
+  const orderNum = 'YMI-' + Date.now().toString().slice(-6);
+
+  document.getElementById('confirmEmail').textContent = email;
+  document.getElementById('confirmOrderDetails').innerHTML = `
+    <div class="confirm-order-row"><span>N° commande</span><span>${orderNum}</span></div>
+    <div class="confirm-order-row"><span>Client</span><span>${fname} ${lname}</span></div>
+    <div class="confirm-order-row"><span>Articles</span><span>${cart.map(i=>i.name+(i.qty>1?' ×'+i.qty:'')).join(', ')}</span></div>
+    <div class="confirm-order-row"><span>Livraison</span><span>${selectedShipping.name}</span></div>
+    <div class="confirm-order-row"><span>Total payé</span><span style="color:var(--gold);font-family:'Shippori Mincho',serif;font-size:1.1rem">${fmt(total)}</span></div>
+  `;
+
+  cart = [];
+  updateCartUI();
+  showPage('confirmPage');
+}
+
+// ══════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════
+let toastTimer;
+function showToast(title, msg) {
+  document.getElementById('toastTitle').textContent = title;
+  document.getElementById('toastMsg').textContent = msg;
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ══════════════════════════════════════════════════
+// SCROLL ANIMATIONS
+// ══════════════════════════════════════════════════
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.style.opacity='1'; e.target.style.transform='translateY(0)'; }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.feat-item, .product-card, .step').forEach(el => {
+  el.style.opacity='0'; el.style.transform='translateY(20px)';
+  el.style.transition='opacity 0.6s ease, transform 0.6s ease';
+  obs.observe(el);
+});
+</script>
+</body>
+</html>
